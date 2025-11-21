@@ -6,19 +6,10 @@ param(
 )
 
 $RepoPath = Split-Path -Path $PSScriptRoot -Parent
-
+$RepoName = (Get-Item -Path $RepoPath).BaseName
 $BuildPath = Join-Path -Path $RepoPath -ChildPath 'out'
 $SourcePath = Join-Path -Path $RepoPath -ChildPath 'src'
-$ModuleManifiestPath = (Get-ChildItem -Path $SourcePath -Filter '*.psd1').FullName
-
-if (-not $ModuleManifiestPath) {
-    throw "Module manifest not found in source path: $SourcePath"
-}
-
-if ($ModuleManifiestPath.Length -gt 1) {
-    throw "Multiple module manifests found in source path: $SourcePath"
-}
-
+$ModuleManifiestPath = Join-Path -Path $SourcePath -ChildPath "$RepoName.psd1"
 $ModuleManifest = Test-ModuleManifest -Path $ModuleManifiestPath
 $ModuleVersion = $ModuleManifest.Version
 $ModuleName = (Get-Item -Path $ModuleManifiestPath).BaseName
