@@ -8,7 +8,7 @@ $LocalDotnetDirPath = if ($IsWindowsEnv) { "$env:LocalAppData\Microsoft\dotnet" 
 #>
 function Find-Dotnet {
     $dotnetFile = if ($IsWindowsEnv) { "dotnet.exe" } else { "dotnet" }
-    $dotnetExePath = Join-Path -Path $LocalDotnetDirPath -ChildPath $dotnetFile
+    $dotnetPath = Join-Path -Path $LocalDotnetDirPath -ChildPath $dotnetFile
 
     # If dotnet is already in the PATH, check to see if that version of dotnet can find the required SDK.
     # This is "typically" the globally installed dotnet.
@@ -19,7 +19,7 @@ function Find-Dotnet {
     }
 
     if (-not $foundDotnetWithRightVersion) {
-        if (Test-DotnetSDK $dotnetExePath) {
+        if (Test-DotnetSDK $dotnetPath) {
             Write-Warning "Can't find the dotnet SDK version $MinimalSDKVersion or higher, prepending '$LocalDotnetDirPath' to PATH."
             $env:PATH = $LocalDotnetDirPath + [IO.Path]::PathSeparator + $env:PATH
         }
@@ -34,10 +34,10 @@ function Find-Dotnet {
     Check if the dotnet SDK meets the minimal version requirement.
 #>
 function Test-DotnetSDK {
-    param($dotnetExePath)
+    param($dotnetPath)
 
-    if (Test-Path $dotnetExePath) {
-        $installedVersion = & $dotnetExePath --version
+    if (Test-Path $dotnetPath) {
+        $installedVersion = & $dotnetPath --version
         return $installedVersion -ge $MinimalSDKVersion
     }
     return $false
@@ -56,30 +56,25 @@ function Install-Dotnet {
 
     try {
         Find-Dotnet
-        return  # Simply return if we find dotnet SDk with the correct version
+        return  # Simply return if we find dotnet SDK with the correct version
     }
     catch { }
 
-    $logMsg = if (Get-Command 'dotnet' -ErrorAction Ignore) {
-        "dotnet SDK out of date. Require '$MinimalSDKVersion' but found '$dotnetSDKVersion'. Updating dotnet."
-    }
-    else {
-        "dotent SDK is not present. Installing dotnet SDK."
-    }
-    Write-Log $logMsg -Warning
+    Write-Log "Installing dotnet SDK version '$Version' to '$LocalDotnetDirPath'." -Warning
 
-    $obtainUrl = "https://raw.githubusercontent.com/dotnet/cli/master/scripts/obtain"
+    $installScript = if ($IsWindowsEnv) { "dotnet-install.ps1" } else { "dotnet-install.sh" }
+
+    # Recommended from https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-install-script#recommended-version
+    $scriptUrl = "https://dot.net/v1/$installScript"
 
     try {
-        Remove-Item $LocalDotnetDirPath -Recurse -Force -ErrorAction Ignore
-        $installScript = if ($IsWindowsEnv) { "dotnet-install.ps1" } else { "dotnet-install.sh" }
-        Invoke-WebRequest -Uri $obtainUrl/$installScript -OutFile $installScript
-
+        Invoke-WebRequest -Uri $scriptUrl -OutFile $installScript
+        
         if ($IsWindowsEnv) {
-            & .\$installScript -Channel $Channel -Version $Version
+            & .\$installScript -Channel $Channel -Version $Version -InstallDir $LocalDotnetDirPath
         }
         else {
-            bash ./$installScript -c $Channel -v $Version
+            bash ./$installScript -c $Channel -v $Version --install-dir $LocalDotnetDirPath
         }
     }
     finally {
