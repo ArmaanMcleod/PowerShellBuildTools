@@ -5,8 +5,10 @@ param(
     $Configuration = 'Debug'
 )
 
-$BuildPath = Join-Path -Path $PSScriptRoot -ChildPath 'out'
-$SourcePath = Join-Path -Path $PSScriptRoot -ChildPath 'src'
+$RepoPath = Split-Path -Path $PSScriptRoot -Parent
+
+$BuildPath = Join-Path -Path $RepoPath -ChildPath 'out'
+$SourcePath = Join-Path -Path $RepoPath -ChildPath 'src'
 $ModuleManifiestPath = (Get-ChildItem -Path $SourcePath -Filter '*.psd1').FullName
 
 if (-not $ModuleManifiestPath) {
@@ -52,7 +54,7 @@ task Publish {
 }
 
 task ExternalHelp {
-    $docsPath = Join-Path -Path $PSScriptRoot -ChildPath 'docs' -AdditionalChildPath 'en-US'
+    $docsPath = Join-Path -Path $RepoPath -ChildPath 'docs' -AdditionalChildPath 'en-US'
     $outputPath = Join-Path -Path $ReleasePath -ChildPath 'en-US'
     New-ExternalHelp -Path $docsPath -OutputPath $outputPath | Out-Null
 }
@@ -85,7 +87,7 @@ task Package {
 }
 
 task RunPesterTests {
-    $testScriptPaths = Join-Path -Path $PSScriptRoot -ChildPath 'test' -AdditionalChildPath '*.Tests.ps1'
+    $testScriptPaths = Join-Path -Path $RepoPath -ChildPath 'test' -AdditionalChildPath '*.Tests.ps1'
 
     $testResultsPath = Join-Path -Path $BuildPath -ChildPath 'TestResults'
     if (-not(Test-Path -Path $testResultsPath)) {
@@ -115,7 +117,7 @@ task MarkdownHelp {
     $platPSManifestContent[2544] = "{0}`r`n{1}" -f "'ProgressAction',", $platPSManifestContent[2544]
     $platPSManifestContent | Set-Content -Path $platyPSManifestPath
     Import-Module $ModulePath -Force
-    $docsPath = Join-Path -Path $PSScriptRoot -ChildPath 'docs' -AdditionalChildPath 'en-US'
+    $docsPath = Join-Path -Path $RepoPath -ChildPath 'docs' -AdditionalChildPath 'en-US'
     Update-MarkdownHelp -Path $docsPath
 }
 
