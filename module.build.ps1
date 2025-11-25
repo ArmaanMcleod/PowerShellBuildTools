@@ -77,6 +77,17 @@ task Package {
     }
 }
 
+task BuildTestProjects {
+    $testPath = Join-Path -Path $RepoPath -ChildPath 'test'
+    $testProjects = Get-ChildItem -Path $testPath -Filter '*.csproj' -Recurse
+    foreach ($proj in $testProjects) {
+        $buildOutput = dotnet build $proj.FullName --configuration $Configuration
+        $dllPathMatch = $buildOutput | Select-String -Pattern '-> (.+\.dll)'
+        $dllPath = $dllPathMatch.Matches[0].Groups[1].Value.Trim()
+        Add-Type -Path $dllPath
+    }
+}
+
 task RunPesterTests {
     $testScriptPaths = Join-Path -Path $RepoPath -ChildPath 'test' -AdditionalChildPath '*.Tests.ps1'
 
@@ -114,7 +125,7 @@ task MarkdownHelp {
 
 task Build -Jobs Clean, Publish, ExternalHelp, Package
 
-task Test -Jobs Publish, RunPesterTests
+task Test -Jobs Publish, BuildTestProjects, RunPesterTests
 
 task Docs -Jobs Publish, MarkdownHelp
 
