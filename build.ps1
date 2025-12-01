@@ -8,7 +8,11 @@ param (
     [Parameter(Mandatory = $false)]
     [ValidateSet('Build', 'Test', 'Docs')]
     [string]
-    $Task = 'Build'
+    $Task = 'Build',
+
+    [Parameter(Mandatory = $false)]
+    [string[]]
+    $PesterTagFilter
 )
 
 Import-Module "$PSScriptRoot/tools/helper.psm1" -Force
@@ -51,6 +55,10 @@ $invokeBuildParams = @{
     Task          = @($Task)
     File          = Join-Path -Path $PSScriptRoot -ChildPath 'module.build.ps1'
     Configuration = $Configuration
+}
+
+if ($PSBoundParameters.ContainsKey('PesterTagFilter')) {
+    $invokeBuildParams['PesterTagFilter'] = $PesterTagFilter
 }
 
 Invoke-Build @invokeBuildParams

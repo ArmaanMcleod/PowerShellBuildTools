@@ -1,8 +1,13 @@
 [CmdletBinding()]
 param(
+    [Parameter(Mandatory = $false)]
     [ValidateSet('Debug', 'Release')]
     [string]
-    $Configuration = 'Debug'
+    $Configuration = 'Debug',
+
+    [Parameter(Mandatory = $false)]
+    [string[]]
+    $PesterTagFilter
 )
 
 $RepoPath = Split-Path -Path $PSScriptRoot -Parent
@@ -108,6 +113,10 @@ task RunPesterTests {
     $configuration.TestResult.Enabled = $true
     $configuration.TestResult.OutputPath = $testResultsFile
     $configuration.TestResult.OutputFormat = 'NUnitXml'
+
+    if ($PSBoundParameters.ContainsKey('PesterTagFilter')) {
+        $configuration.Filter.Tag = $PesterTagFilter
+    }
 
     Invoke-Pester -Configuration $configuration
 }
