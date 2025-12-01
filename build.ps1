@@ -57,8 +57,10 @@ $invokeBuildParams = @{
     Configuration = $Configuration
 }
 
-if ($PSBoundParameters.ContainsKey('PesterTagFilter')) {
+if ($PesterTagFilter) {
     $invokeBuildParams['PesterTagFilter'] = $PesterTagFilter
 }
+
+Write-Log "Starting build task '$Task' with parameters: $($invokeBuildParams | Out-String)"
 
 Invoke-Build @invokeBuildParams

@@ -114,8 +114,12 @@ task RunPesterTests {
     $configuration.TestResult.OutputPath = $testResultsFile
     $configuration.TestResult.OutputFormat = 'NUnitXml'
 
-    if ($PSBoundParameters.ContainsKey('PesterTagFilter')) {
+    if ($PesterTagFilter) {
+        Write-Log "Applying Pester tag filter: $PesterTagFilter"
         $configuration.Filter.Tag = $PesterTagFilter
+    }
+    else {
+        Write-Log "No Pester tag filter applied; running all tests"
     }
 
     Invoke-Pester -Configuration $configuration
