@@ -4,7 +4,11 @@ if (-not (Test-Path -Path $globalPath)) {
     throw "Cannot find global.json at expected path: $globalPath"
 }
 
-$globalJsonContent = Get-Content -Path $globalPath -Raw | ConvertFrom-Json
+try {
+    $globalJsonContent = Get-Content -Path $globalPath -Raw | ConvertFrom-Json
+} catch {
+    throw "Failed to parse global.json at path: $globalPath. Ensure the file contains valid JSON. Error: $($_.Exception.Message)"
+}
 $RequiredSDKVersion = $globalJsonContent.sdk.version
 
 if (-not $RequiredSDKVersion) {
