@@ -40,9 +40,8 @@ function Find-Dotnet {
         Write-Log "Found dotnet SDK version '$RequiredSDKVersion' in PATH."
         return
     }
-    
+
     Write-Log "Dotnet SDK version '$RequiredSDKVersion' not found in PATH."
-        
     if (Test-DotnetSDK $dotnetPath) {
         Write-Log "dotnet SDK version '$RequiredSDKVersion' found, prepending '$LocalDotnetDirPath' to PATH." -Warning
         $env:PATH = $LocalDotnetDirPath + [System.IO.Path]::PathSeparator + $env:PATH
