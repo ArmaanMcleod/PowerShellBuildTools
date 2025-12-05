@@ -60,7 +60,7 @@ function Test-DotnetSDK {
 
     if (Test-Path $dotnetPath) {
         $installedVersion = & $dotnetPath --version
-        return $installedVersion -eq $RequiredSDKVersion
+        return ([version]$installedVersion) -eq ([version]$RequiredSDKVersion)
     }
     return $false
 }
