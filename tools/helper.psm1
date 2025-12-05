@@ -8,7 +8,7 @@ $globalJsonContent = Get-Content -Path $globalPath -Raw | ConvertFrom-Json
 $RequiredSDKVersion = $globalJsonContent.sdk.version
 
 if (-not $RequiredSDKVersion) {
-    throw "Cannot find required SDK version in path: $globalPath"
+    throw "Cannot find required SDK version in file: $globalPath"
 }
 
 $IsWindowsEnv = [System.Environment]::OSVersion.Platform -eq "Win32NT"
