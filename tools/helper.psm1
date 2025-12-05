@@ -1,14 +1,28 @@
-$MinimalSDKVersion = '6.0.100'
+$repoPath = (Get-Item -Path $PSScriptRoot).Parent.Parent.FullName
+$globalPath = Join-Path -Path $repoPath -ChildPath 'global.json'
+if (-not (Test-Path -Path $globalPath)) {
+    throw "Cannot find global.json at expected path: $globalPath"
+}
+
+$globalJsonContent = Get-Content -Path $globalPath -Raw | ConvertFrom-Json
+$RequiredSDKVersion = $globalJsonContent.sdk.version
+
+if (-not $RequiredSDKVersion) {
+    throw "Cannot find required SDK version in path: $globalPath"
+}
+
 $IsWindowsEnv = [System.Environment]::OSVersion.Platform -eq "Win32NT"
 $LocalDotnetDirPath = if ($IsWindowsEnv) { "$env:LocalAppData\Microsoft\dotnet" } else { "$env:HOME/.dotnet" }
 
 <#
 .SYNOPSIS
-    Find the dotnet SDK that meets the minimal version requirement.
+    Find the dotnet SDK that meets the required version requirement.
 #>
 function Find-Dotnet {
     $dotnetFile = if ($IsWindowsEnv) { "dotnet.exe" } else { "dotnet" }
     $dotnetPath = Join-Path -Path $LocalDotnetDirPath -ChildPath $dotnetFile
+
+    Write-Log "Searching for dotnet SDK version $RequiredSDKVersion ..."
 
     # If dotnet is already in the PATH, check to see if that version of dotnet can find the required SDK.
     # This is "typically" the globally installed dotnet.
@@ -18,27 +32,32 @@ function Find-Dotnet {
         $foundDotnetWithRightVersion = Test-DotnetSDK $dotnetInPath.Source
     }
 
-    if (-not $foundDotnetWithRightVersion) {
-        if (Test-DotnetSDK $dotnetPath) {
-            Write-Warning "Can't find the dotnet SDK version $MinimalSDKVersion or higher, prepending '$LocalDotnetDirPath' to PATH."
-            $env:PATH = $LocalDotnetDirPath + [IO.Path]::PathSeparator + $env:PATH
-        }
-        else {
-            throw "Cannot find the dotnet SDK with the version $MinimalSDKVersion or higher. Please specify '-Bootstrap' to install build dependencies."
-        }
+    if ($foundDotnetWithRightVersion) {
+        Write-Log "Found dotnet SDK version '$RequiredSDKVersion' in PATH."
+        return
+    }
+    
+    Write-Log "Dotnet SDK version '$RequiredSDKVersion' not found in PATH."
+        
+    if (Test-DotnetSDK $dotnetPath) {
+        Write-Log "dotnet SDK version '$RequiredSDKVersion' found, prepending '$LocalDotnetDirPath' to PATH." -Warning
+        $env:PATH = $LocalDotnetDirPath + [System.IO.Path]::PathSeparator + $env:PATH
+    }
+    else {
+        throw "Cannot find the dotnet SDK with the version $RequiredSDKVersion."
     }
 }
 
 <#
 .SYNOPSIS
-    Check if the dotnet SDK meets the minimal version requirement.
+    Check if the dotnet SDK meets the required version.
 #>
 function Test-DotnetSDK {
     param($dotnetPath)
 
     if (Test-Path $dotnetPath) {
         $installedVersion = & $dotnetPath --version
-        return $installedVersion -ge $MinimalSDKVersion
+        return $installedVersion -eq $RequiredSDKVersion
     }
     return $false
 }
@@ -51,7 +70,7 @@ function Install-Dotnet {
     [CmdletBinding()]
     param(
         [string]$Channel = 'release',
-        [string]$Version = $MinimalSDKVersion
+        [string]$Version = $RequiredSDKVersion
     )
 
     try {
