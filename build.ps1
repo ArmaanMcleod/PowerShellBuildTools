@@ -15,7 +15,13 @@ param (
     $PesterTagFilter
 )
 
-Import-Module "$PSScriptRoot/tools/helper.psm1" -Force
+
+try {
+    Import-Module "$PSScriptRoot/tools/helper.psm1" -Force -ErrorAction Stop
+} catch {
+    Write-Error "Failed to import helper.psm1: $($_.Exception.Message)"
+    exit 1
+}
 
 Write-Log "Validate and install missing prerequisites for building ..."
 

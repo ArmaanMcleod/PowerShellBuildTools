@@ -9,7 +9,31 @@ try {
 } catch {
     throw "Failed to parse global.json at path: $globalPath. Ensure the file contains valid JSON. Error: $($_.Exception.Message)"
 }
-$RequiredSDKVersion = $globalJsonContent.sdk.version
+
+$schema = '{
+  "type": "object",
+  "properties": {
+    "sdk": {
+      "type": "object",
+      "properties": {
+        "version": { "type": "string" }
+      },
+      "required": ["version"]
+    }
+  },
+  "required": ["sdk"]
+}'
+
+if (-not (Test-Json -Path $globalPath -Schema $schema)) {
+    throw "global.json does not match the required schema."
+}
+
+try {
+    $RequiredSDKVersion = [System.Version]$globalJsonContent.sdk.version
+}
+catch {
+    throw "Invalid SDK version format in global.json: $($globalJsonContent.sdk.version)"
+}
 
 if (-not $RequiredSDKVersion) {
     throw "Cannot find required SDK version in file: $globalPath"
@@ -60,7 +84,7 @@ function Test-DotnetSDK {
 
     if (Test-Path $dotnetPath) {
         $installedVersion = & $dotnetPath --version
-        return ([version]$installedVersion) -eq ([version]$RequiredSDKVersion)
+        return [System.Version]$installedVersion -eq $RequiredSDKVersion
     }
     return $false
 }
