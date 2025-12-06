@@ -1,16 +1,16 @@
-$repoPath = (Get-Item -Path $PSScriptRoot).Parent.Parent.FullName
-$globalPath = Join-Path -Path $repoPath -ChildPath 'global.json'
-if (-not (Test-Path -Path $globalPath)) {
-    throw "Cannot find global.json at expected path: $globalPath"
+$RepoPath = (Get-Item -Path $PSScriptRoot).Parent.Parent.FullName
+$GlobalPath = Join-Path -Path $RepoPath -ChildPath 'global.json'
+if (-not (Test-Path -Path $GlobalPath)) {
+    throw "Cannot find global.json at expected path: $GlobalPath"
 }
 
 try {
-    $globalJsonContent = Get-Content -Path $globalPath -Raw | ConvertFrom-Json
+    $GlobalJsonContent = Get-Content -Path $GlobalPath -Raw | ConvertFrom-Json
 } catch {
-    throw "Failed to parse global.json at path: $globalPath. Ensure the file contains valid JSON. Error: $($_.Exception.Message)"
+    throw "Failed to parse global.json at path: $GlobalPath. Ensure the file contains valid JSON. Error: $($_.Exception.Message)"
 }
 
-$schema = '{
+$Schema = '{
   "type": "object",
   "properties": {
     "sdk": {
@@ -24,21 +24,11 @@ $schema = '{
   "required": ["sdk"]
 }'
 
-if (-not (Test-Json -Path $globalPath -Schema $schema)) {
+if (-not (Test-Json -Path $GlobalPath -Schema $Schema)) {
     throw "global.json does not match the required schema."
 }
 
-try {
-    $RequiredSDKVersion = [System.Version]$globalJsonContent.sdk.version
-}
-catch {
-    throw "Invalid SDK version format in global.json: $($globalJsonContent.sdk.version)"
-}
-
-if (-not $RequiredSDKVersion) {
-    throw "Cannot find required SDK version in file: $globalPath"
-}
-
+$RequiredSDKVersion = $GlobalJsonContent.sdk.version
 $IsWindowsEnv = [System.Environment]::OSVersion.Platform -eq "Win32NT"
 $LocalDotnetDirPath = if ($IsWindowsEnv) { "$env:LocalAppData\Microsoft\dotnet" } else { "$env:HOME/.dotnet" }
 
@@ -53,25 +43,26 @@ function Find-Dotnet {
     Write-Log "Searching for dotnet SDK version $RequiredSDKVersion ..."
 
     # If dotnet is already in the PATH, check to see if that version of dotnet can find the required SDK.
-    # This is "typically" the globally installed dotnet.
-    $foundDotnetWithRightVersion = $false
+    # This is typically the globally installed dotnet.
     $dotnetInPath = Get-Command 'dotnet' -ErrorAction Ignore
     if ($dotnetInPath) {
-        $foundDotnetWithRightVersion = Test-DotnetSDK $dotnetInPath.Source
+        Write-Log "Found global dotnet at '$($dotnetInPath.Source)'. Checking version..."
+        
+        if (Find-RequiredDotnetSDK $dotnetInPath.Source) {
+            Write-Log "Found global dotnet SDK version '$RequiredSDKVersion' in PATH."
+            return
+        }
     }
 
-    if ($foundDotnetWithRightVersion) {
-        Write-Log "Found dotnet SDK version '$RequiredSDKVersion' in PATH."
-        return
-    }
-
+    # Check the local dotnet installation next.
+    # This is typically where we install the required SDK if it's not found globally.
     Write-Log "Dotnet SDK version '$RequiredSDKVersion' not found in PATH."
-    if (Test-DotnetSDK $dotnetPath) {
-        Write-Log "dotnet SDK version '$RequiredSDKVersion' found, prepending '$LocalDotnetDirPath' to PATH." -Warning
+    if (Find-RequiredDotnetSDK $dotnetPath) {
+        Write-Log "Local dotnet SDK version '$RequiredSDKVersion' found at '$dotnetPath', prepending '$LocalDotnetDirPath' to PATH." -Warning
         $env:PATH = $LocalDotnetDirPath + [System.IO.Path]::PathSeparator + $env:PATH
     }
     else {
-        throw "Cannot find the dotnet SDK with the version $RequiredSDKVersion."
+        throw "Cannot find global or local dotnet SDK with the version $RequiredSDKVersion."
     }
 }
 
@@ -79,12 +70,18 @@ function Find-Dotnet {
 .SYNOPSIS
     Check if the dotnet SDK meets the required version.
 #>
-function Test-DotnetSDK {
+function Find-RequiredDotnetSDK {
     param($dotnetPath)
 
     if (Test-Path $dotnetPath) {
-        $installedVersion = & $dotnetPath --version
-        return [System.Version]$installedVersion -eq $RequiredSDKVersion
+        $sdkList = & $dotnetPath --list-sdks 2>$null
+        
+        foreach ($sdk in $sdkList) {
+            $version = $sdk.Split(' ')[0]
+            if ($version -eq $RequiredSDKVersion) {
+                return $true
+            }
+        }
     }
     return $false
 }
