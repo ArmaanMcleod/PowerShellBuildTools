@@ -153,7 +153,7 @@ task MarkdownHelp {
 
     New-Item -Path $DocsPath -ItemType Directory -Force | Out-Null
     
-    $commands = Get-Command -Module $ModuleName | Where-Object { $_.CommandType -eq 'Cmdlet' }
+    $commands = Get-Command -Module $ModuleName | Where-Object { $_.CommandType -in 'Cmdlet', 'Function' }
 
     foreach ($command in $commands) {
         $docFile = Join-Path -Path $DocsPath -ChildPath "$($command.Name).md"
