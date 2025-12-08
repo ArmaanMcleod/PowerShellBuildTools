@@ -18,7 +18,8 @@ param (
 
 try {
     Import-Module "$PSScriptRoot/tools/helper.psm1" -Force -ErrorAction Stop
-} catch {
+}
+catch {
     Write-Error "Failed to import helper.psm1: $($_.Exception.Message)"
     exit 1
 }
