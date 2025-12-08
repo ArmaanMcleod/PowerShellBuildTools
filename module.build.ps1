@@ -62,7 +62,7 @@ task ExternalHelp {
         $outputPath = Join-Path -Path $ReleasePath -ChildPath $DocsLocale
         $mdfiles = Measure-PlatyPSMarkdown -Path "$DocsPath/*.md"
         $mdfiles | Where-Object Filetype -match 'CommandHelp' |
-        Import-MarkdownCommandHelp -Path $_.FilePath |
+        Import-MarkdownCommandHelp -Path { $_.FilePath } |
         Export-MamlCommandHelp -OutputFolder $outputPath -Force
 
         # Microsoft.PowerShell.PlatyPS creates a subfolder with the module name; move XML files up one level
