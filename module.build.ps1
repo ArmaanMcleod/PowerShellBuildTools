@@ -66,6 +66,7 @@ task ExternalHelp {
         Export-MamlCommandHelp -OutputFolder $outputPath -Force
 
         # Microsoft.PowerShell.PlatyPS creates a subfolder with the module name; move XML files up one level
+        # https://github.com/PowerShell/platyPS/issues/835
         $mamlSubfolder = Join-Path -Path $outputPath -ChildPath $ModuleName
         if (Test-Path $mamlSubfolder) {
             Get-ChildItem -Path $mamlSubfolder -Filter '*.xml' | ForEach-Object {
@@ -180,6 +181,7 @@ task MarkdownHelp {
     }
 
     # Microsoft.PowerShell.PlatyPS creates a subfolder with the module name; move .md files up one level
+    # https://github.com/PowerShell/platyPS/issues/835
     $moduleDocsPath = Join-Path -Path $DocsPath -ChildPath $ModuleName
     if (Test-Path $moduleDocsPath) {
         Get-ChildItem -Path $moduleDocsPath -Filter '*.md' | ForEach-Object {
