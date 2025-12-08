@@ -21,6 +21,8 @@ $ModuleName = (Get-Item -Path $ModuleManifiestPath).BaseName
 $ModulePath = Join-Path -Path $BuildPath -ChildPath $ModuleName
 $ReleasePath = Join-Path -Path $ModulePath -ChildPath $ModuleVersion
 $ToolsPath = Join-Path -Path $PSScriptRoot -ChildPath 'tools'
+$DocsLocale = 'en-US'
+$DocsPath = Join-Path -Path $RepoPath -ChildPath 'docs' -AdditionalChildPath $DocsLocale
 
 task Clean {
     try {
@@ -56,9 +58,24 @@ task Publish {
 }
 
 task ExternalHelp {
-    $docsPath = Join-Path -Path $RepoPath -ChildPath 'docs' -AdditionalChildPath 'en-US'
-    $outputPath = Join-Path -Path $ReleasePath -ChildPath 'en-US'
-    New-ExternalHelp -Path $docsPath -OutputPath $outputPath | Out-Null
+    if (Test-Path -Path $DocsPath) {
+        $outputPath = Join-Path -Path $ReleasePath -ChildPath $DocsLocale
+        $mdfiles = Measure-PlatyPSMarkdown -Path "$DocsPath/*.md"
+        $mdfiles | Where-Object Filetype -match 'CommandHelp' |
+        Import-MarkdownCommandHelp -Path { $_.FilePath } |
+        Export-MamlCommandHelp -OutputFolder $outputPath -Force
+
+        # Microsoft.PowerShell.PlatyPS creates a subfolder with the module name; move XML files up one level
+        # https://github.com/PowerShell/platyPS/issues/835
+        $mamlSubfolder = Join-Path -Path $outputPath -ChildPath $ModuleName
+        if (Test-Path $mamlSubfolder) {
+            Get-ChildItem -Path $mamlSubfolder -Filter '*.xml' | ForEach-Object {
+                Move-Item -Path $_.FullName -Destination $outputPath -Force
+            }
+            Remove-Item -Path $mamlSubfolder -Recurse -Force
+            Write-Log "Flattened XML files from $mamlSubfolder to $outputPath"
+        }
+    }
 }
 
 task Package {
@@ -135,14 +152,43 @@ task RunPesterTests {
 }
 
 task MarkdownHelp {
-    # Add ProgressAction parameter workaround for https://github.com/PowerShell/platyPS/issues/595
-    $platyPSManifestPath = Join-Path -Path $ToolsPath -ChildPath 'Modules' -AdditionalChildPath 'platyPS', 'platyPS.psm1'
-    $platPSManifestContent = Get-Content -Path $platyPSManifestPath
-    $platPSManifestContent[2544] = "{0}`r`n{1}" -f "'ProgressAction',", $platPSManifestContent[2544]
-    $platPSManifestContent | Set-Content -Path $platyPSManifestPath
     Import-Module $ModulePath -Force
-    $docsPath = Join-Path -Path $RepoPath -ChildPath 'docs' -AdditionalChildPath 'en-US'
-    Update-MarkdownHelp -Path $docsPath
+
+    New-Item -Path $DocsPath -ItemType Directory -Force | Out-Null
+    $commands = Get-Command -Module $ModuleName | Where-Object { $_.CommandType -in 'Cmdlet', 'Function' }
+
+    foreach ($command in $commands) {
+        $docFile = Join-Path -Path $DocsPath -ChildPath "$($command.Name).md"
+        if (-not (Test-Path -Path $docFile)) {
+            Write-Log "Creating new markdown help for $($command.Name)"
+
+            # Workaround for PlatyPS not respecting culture during help generation when using -Locale 'en-US'
+            # https://github.com/PowerShell/platyPS/issues/763
+            try {
+                $originalCulture = [System.Globalization.CultureInfo]::CurrentCulture
+                [System.Globalization.CultureInfo]::CurrentCulture = [System.Globalization.CultureInfo]::GetCultureInfo($DocsLocale)
+                New-MarkdownCommandHelp -Command $command -OutputFolder $DocsPath -Force | Out-Null
+            }
+            finally {
+                [System.Globalization.CultureInfo]::CurrentCulture = $originalCulture
+            }
+        }
+        else {
+            Write-Log "Updating markdown help for $($command.Name)"
+            Update-MarkdownCommandHelp -Path $docFile -NoBackup | Out-Null
+        }
+    }
+
+    # Microsoft.PowerShell.PlatyPS creates a subfolder with the module name; move .md files up one level
+    # https://github.com/PowerShell/platyPS/issues/835
+    $moduleDocsPath = Join-Path -Path $DocsPath -ChildPath $ModuleName
+    if (Test-Path $moduleDocsPath) {
+        Get-ChildItem -Path $moduleDocsPath -Filter '*.md' | ForEach-Object {
+            Move-Item -Path $_.FullName -Destination $DocsPath -Force
+        }
+        Remove-Item -Path $moduleDocsPath -Recurse -Force
+        Write-Log "Flattened $moduleDocsPath into $DocsPath"
+    }
 }
 
 task Build -Jobs Clean, Publish, ExternalHelp, Package

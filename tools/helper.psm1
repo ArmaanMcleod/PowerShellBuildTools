@@ -6,7 +6,8 @@ if (-not (Test-Path -Path $GlobalPath)) {
 
 try {
     $GlobalJsonContent = Get-Content -Path $GlobalPath -Raw | ConvertFrom-Json
-} catch {
+}
+catch {
     throw "Failed to parse global.json at path: $GlobalPath. Ensure the file contains valid JSON. Error: $($_.Exception.Message)"
 }
 
