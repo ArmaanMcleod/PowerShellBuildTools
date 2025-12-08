@@ -61,7 +61,7 @@ task ExternalHelp {
         $outputPath = Join-Path -Path $ReleasePath -ChildPath 'en-US'
         $mdfiles = Measure-PlatyPSMarkdown -Path "$DocsPath/*.md"
         $mdfiles | Where-Object Filetype -match 'CommandHelp' |
-        Import-MarkdownCommandHelp -Path { $_.FilePath } |
+        Import-MarkdownCommandHelp -Path $_.FilePath |
         Export-MamlCommandHelp -OutputFolder $outputPath -Force
 
         $mamlSubfolder = Join-Path -Path $outputPath -ChildPath $ModuleName
