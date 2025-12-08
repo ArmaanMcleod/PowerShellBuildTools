@@ -21,7 +21,8 @@ $ModuleName = (Get-Item -Path $ModuleManifiestPath).BaseName
 $ModulePath = Join-Path -Path $BuildPath -ChildPath $ModuleName
 $ReleasePath = Join-Path -Path $ModulePath -ChildPath $ModuleVersion
 $ToolsPath = Join-Path -Path $PSScriptRoot -ChildPath 'tools'
-$DocsPath = Join-Path -Path $RepoPath -ChildPath 'docs' -AdditionalChildPath 'en-US'
+$DocsLocale = 'en-US'
+$DocsPath = Join-Path -Path $RepoPath -ChildPath 'docs' -AdditionalChildPath $DocsLocale
 
 task Clean {
     try {
@@ -58,7 +59,7 @@ task Publish {
 
 task ExternalHelp {
     if (Test-Path -Path $DocsPath) {
-        $outputPath = Join-Path -Path $ReleasePath -ChildPath 'en-US'
+        $outputPath = Join-Path -Path $ReleasePath -ChildPath $DocsLocale
         $mdfiles = Measure-PlatyPSMarkdown -Path "$DocsPath/*.md"
         $mdfiles | Where-Object Filetype -match 'CommandHelp' |
         Import-MarkdownCommandHelp -Path $_.FilePath |
@@ -164,7 +165,7 @@ task MarkdownHelp {
             # https://github.com/PowerShell/platyPS/issues/763
             try {
                 $originalCulture = [System.Globalization.CultureInfo]::CurrentCulture
-                [System.Globalization.CultureInfo]::CurrentCulture = 'en-US'
+                [System.Globalization.CultureInfo]::CurrentCulture = [System.Globalization.CultureInfo]::GetCultureInfo($DocsLocale)
                 New-MarkdownCommandHelp -Command $command -OutputFolder $DocsPath -Force | Out-Null
             }
             finally {
