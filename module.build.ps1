@@ -32,6 +32,9 @@ task Clean {
         }
 
         dotnet clean
+        if ($LASTEXITCODE -ne 0) {
+            throw "dotnet clean failed with exit code $LASTEXITCODE"
+        }
     }
     finally {
         Pop-Location
@@ -43,6 +46,9 @@ task Publish {
         Push-Location -Path $SourcePath
         Write-Log "Publishing $Configuration configuration to $ReleasePath"
         dotnet publish --output $ReleasePath --configuration $Configuration
+        if ($LASTEXITCODE -ne 0) {
+            throw "dotnet publish failed with exit code $LASTEXITCODE"
+        }
     }
     finally {
         Pop-Location
@@ -87,6 +93,9 @@ task BuildTestProjects {
     $testProjects = Get-ChildItem -Path $testPath -Filter '*.csproj' -Recurse
     foreach ($proj in $testProjects) {
         $buildOutput = dotnet build $proj.FullName --configuration $Configuration
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to build test project: $($proj.FullName)"
+        }
         $dllPathMatch = $buildOutput | Select-String -Pattern '-> (.+\.dll)'
         $dllPath = $dllPathMatch.Matches[0].Groups[1].Value.Trim()
         Add-Type -Path $dllPath
