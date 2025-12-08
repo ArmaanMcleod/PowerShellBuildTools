@@ -159,7 +159,6 @@ task MarkdownHelp {
 
     foreach ($command in $commands) {
         $docFile = Join-Path -Path $DocsPath -ChildPath "$($command.Name).md"
-        
         if (-not (Test-Path -Path $docFile)) {
             Write-Log "Creating new markdown help for $($command.Name)"
 
