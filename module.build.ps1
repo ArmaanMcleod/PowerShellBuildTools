@@ -152,7 +152,6 @@ task MarkdownHelp {
     Import-Module $ModulePath -Force
 
     New-Item -Path $DocsPath -ItemType Directory -Force | Out-Null
-    
     $commands = Get-Command -Module $ModuleName | Where-Object { $_.CommandType -in 'Cmdlet', 'Function' }
 
     foreach ($command in $commands) {
