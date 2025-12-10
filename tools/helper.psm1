@@ -59,11 +59,19 @@ function Find-Dotnet {
     # This is typically where we install the required SDK if it's not found globally.
     Write-Log "Dotnet SDK version '$RequiredSDKVersion' not found in PATH."
     if (Find-RequiredDotnetSDK $dotnetPath) {
-        Write-Log "Local dotnet SDK version '$RequiredSDKVersion' found at '$dotnetPath', prepending '$LocalDotnetDirPath' to PATH." -Warning
-        $env:PATH = $LocalDotnetDirPath + [System.IO.Path]::PathSeparator + $env:PATH
+        Write-Log "Local dotnet SDK version '$RequiredSDKVersion' found at '$dotnetPath'." -Warning
+        Add-LocalDotnetToPath
     }
     else {
         throw "Cannot find global or local dotnet SDK with the version $RequiredSDKVersion."
+    }
+}
+
+function Add-LocalDotnetToPath {
+    $dotnetInPath = $env:PATH.Split([System.IO.Path]::PathSeparator) -contains $LocalDotnetDirPath
+    if (-not $dotnetInPath) {
+        Write-Log "Prepending '$LocalDotnetDirPath' to PATH." -Warning
+        $env:PATH = $LocalDotnetDirPath + [System.IO.Path]::PathSeparator + $env:PATH
     }
 }
 
@@ -120,6 +128,8 @@ function Install-Dotnet {
         else {
             bash ./$installScript -c $Channel -v $Version --install-dir $LocalDotnetDirPath
         }
+
+        Add-LocalDotnetToPath
     }
     finally {
         Remove-Item $installScript -Force -ErrorAction Ignore
