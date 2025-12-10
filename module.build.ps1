@@ -20,7 +20,6 @@ $ModuleVersion = $ModuleManifest.Version
 $ModuleName = (Get-Item -Path $ModuleManifiestPath).BaseName
 $ModulePath = Join-Path -Path $BuildPath -ChildPath $ModuleName
 $ReleasePath = Join-Path -Path $ModulePath -ChildPath $ModuleVersion
-$ToolsPath = Join-Path -Path $PSScriptRoot -ChildPath 'tools'
 $DocsLocale = 'en-US'
 $DocsPath = Join-Path -Path $RepoPath -ChildPath 'docs' -AdditionalChildPath $DocsLocale
 
@@ -50,6 +49,20 @@ task Publish {
         dotnet publish --output $ReleasePath --configuration $Configuration
         if ($LASTEXITCODE -ne 0) {
             throw "dotnet publish failed with exit code $LASTEXITCODE"
+        }
+    }
+    finally {
+        Pop-Location
+    }
+}
+
+task Restore {
+    try {
+        Push-Location -Path $SourcePath
+        Write-Log "Restoring NuGet packages"
+        dotnet restore
+        if ($LASTEXITCODE -ne 0) {
+            throw "dotnet restore failed with exit code $LASTEXITCODE"
         }
     }
     finally {
@@ -191,7 +204,7 @@ task MarkdownHelp {
     }
 }
 
-task Build -Jobs Clean, Publish, ExternalHelp, Package
+task Build -Jobs Restore, Clean, Publish, ExternalHelp, Package
 
 task Test -Jobs Publish, BuildTestProjects, RunPesterTests
 
