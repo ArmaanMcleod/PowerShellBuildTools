@@ -67,6 +67,10 @@ function Find-Dotnet {
     }
 }
 
+<#
+.SYNOPSIS
+    Add the local dotnet installation directory to PATH if not already present.
+#>
 function Add-LocalDotnetToPath {
     $dotnetInPath = $env:PATH.Split([System.IO.Path]::PathSeparator) -contains $LocalDotnetDirPath
     if (-not $dotnetInPath) {
