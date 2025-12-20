@@ -204,7 +204,7 @@ task MarkdownHelp {
     }
 }
 
-task Build -Jobs Restore, Clean, Publish, ExternalHelp, Package
+task Build -Jobs Restore, Clean, Publish, BuildTestProjects, ExternalHelp, Package
 
 task Test -Jobs Publish, BuildTestProjects, RunPesterTests
 
