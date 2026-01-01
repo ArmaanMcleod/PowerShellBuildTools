@@ -209,7 +209,7 @@ function Convert-ToMsysPath {
     if ($msysPath -match '^([A-Za-z]):') {
         $drive = $matches[1].ToLower()
         $rest  = $msysPath.Substring(2)
-        return "/$drive$rest"
+        return "/${drive}${rest}"
     }
     return $msysPath
 }
