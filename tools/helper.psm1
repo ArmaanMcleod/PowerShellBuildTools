@@ -268,6 +268,6 @@ function Invoke-Dotnet {
     & dotnet @dotnetArgs
 
     if ($LASTEXITCODE -ne 0) {
-        throw "Dotnet command failed with exit code ${LASTEXITCODE}: dotnet $Command"
+        throw "Dotnet command failed with exit code ${LASTEXITCODE}: dotnet ${Command}"
     }
 }
