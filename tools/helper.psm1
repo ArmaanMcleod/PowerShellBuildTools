@@ -224,7 +224,7 @@ function Invoke-Mingw64 {
         [switch]$IgnoreError
     )
 
-    Write-Host ">> [MINGW64] $Command"
+    Write-Host ">> [MINGW64] ${Command}"
 
     $env:MSYSTEM = "MINGW64"
     $env:CHERE_INVOKING = "1"
