@@ -32,10 +32,7 @@ task Clean {
             Remove-Item -Path $ReleasePath -Recurse -Force
         }
 
-        dotnet clean
-        if ($LASTEXITCODE -ne 0) {
-            throw "dotnet clean failed with exit code $LASTEXITCODE"
-        }
+        Invoke-Dotnet "clean"
     }
     finally {
         Pop-Location
@@ -46,10 +43,7 @@ task Publish {
     try {
         Push-Location -Path $SourcePath
         Write-Log "Publishing $Configuration configuration to $ReleasePath"
-        dotnet publish --output $ReleasePath --configuration $Configuration
-        if ($LASTEXITCODE -ne 0) {
-            throw "dotnet publish failed with exit code $LASTEXITCODE"
-        }
+        Invoke-Dotnet "publish --output $ReleasePath --configuration $Configuration"
     }
     finally {
         Pop-Location
@@ -60,10 +54,7 @@ task Restore {
     try {
         Push-Location -Path $SourcePath
         Write-Log "Restoring NuGet packages"
-        dotnet restore
-        if ($LASTEXITCODE -ne 0) {
-            throw "dotnet restore failed with exit code $LASTEXITCODE"
-        }
+        Invoke-Dotnet "restore"
     }
     finally {
         Pop-Location
@@ -122,10 +113,7 @@ task BuildTestProjects {
     $testPath = Join-Path -Path $RepoPath -ChildPath 'test'
     $testProjects = Get-ChildItem -Path $testPath -Filter '*.csproj' -Recurse
     foreach ($proj in $testProjects) {
-        $buildOutput = dotnet build $proj.FullName --configuration $Configuration
-        if ($LASTEXITCODE -ne 0) {
-            throw "Failed to build test project: $($proj.FullName)"
-        }
+        $buildOutput = Invoke-Dotnet "build $($proj.FullName) --configuration $Configuration"
         $dllPathMatch = $buildOutput | Select-String -Pattern '-> (.+\.dll)'
         $dllPath = $dllPathMatch.Matches[0].Groups[1].Value.Trim()
         Add-Type -Path $dllPath

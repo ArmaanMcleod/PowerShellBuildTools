@@ -48,7 +48,7 @@ function Find-Dotnet {
     $dotnetInPath = Get-Command 'dotnet' -ErrorAction Ignore
     if ($dotnetInPath) {
         Write-Log "Found global dotnet at '$($dotnetInPath.Source)'. Checking version..."
-        
+
         if (Find-RequiredDotnetSDK $dotnetInPath.Source) {
             Write-Log "Found global dotnet SDK version '$RequiredSDKVersion' in PATH."
             return
@@ -88,7 +88,7 @@ function Find-RequiredDotnetSDK {
 
     if (Test-Path $dotnetPath) {
         $sdkList = & $dotnetPath --list-sdks 2>$null
-        
+
         foreach ($sdk in $sdkList) {
             $version = $sdk.Split(' ')[0]
             if ($version -eq $RequiredSDKVersion) {
@@ -125,7 +125,7 @@ function Install-Dotnet {
 
     try {
         Invoke-WebRequest -Uri $scriptUrl -OutFile $installScript
-        
+
         if ($IsWindowsEnv) {
             & .\$installScript -Channel $Channel -Version $Version -InstallDir $LocalDotnetDirPath
         }
@@ -180,4 +180,94 @@ function Expand-Nupkg {
     $zipPath = Join-Path -Path $OutputPath -ChildPath "$moduleName.$moduleVersion.zip"
 
     Expand-Archive -Path $zipPath -DestinationPath $destPath -Force
+}
+
+<#
+.SYNOPSIS
+    Helper to run a git command and check for errors
+#>
+function Invoke-Git {
+    param(
+        [string]$Command
+    )
+    Write-Host ">> [GIT] $Command"
+    $gitArgs = $Command -split ' '
+    & git @gitArgs
+    if ($LASTEXITCODE -ne 0) {
+        throw "Git command failed with exit code ${LASTEXITCODE}: git $Command"
+    }
+}
+
+<#
+.SYNOPSIS
+    Convert Windows path to MSYS2 path
+#>
+function Convert-ToMsysPath {
+    param([string]$winPath)
+
+    $msysPath = $winPath -replace '\\', '/'
+    if ($msysPath -match '^([A-Za-z]):') {
+        $drive = $matches[1].ToLower()
+        $rest  = $msysPath.Substring(2)
+        return "/$drive$rest"
+    }
+    return $msysPath
+}
+
+<#
+.SYNOPSIS
+    Helper to run a command in MinGW64 environment
+#>
+function Invoke-Mingw64 {
+    param(
+        [string]$Command,
+        [switch]$IgnoreError
+    )
+
+    Write-Host ">> [MINGW64] $Command"
+
+    $env:MSYSTEM = "MINGW64"
+    $env:CHERE_INVOKING = "1"
+
+    & "C:\msys64\usr\bin\bash.exe" --login -c "$Command"
+
+    if (-not $IgnoreError -and $LASTEXITCODE -ne 0) {
+        throw "MINGW64 command failed with exit code ${LASTEXITCODE}: ${Command}"
+    }
+}
+
+<#
+.SYNOPSIS
+    Helper to run a winget command and check for errors
+#>
+function Invoke-Winget {
+    param(
+        [string]$Command
+    )
+
+    Write-Host ">> [WINGET] $Command"
+    $wingetArgs = $Command -split ' '
+    & winget @wingetArgs
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Winget command failed with exit code ${LASTEXITCODE}: winget ${Command}"
+    }
+}
+
+<#
+.SYNOPSIS
+    Helper to run a dotnet command and check for errors
+#>
+function Invoke-Dotnet {
+    param(
+        [string]$Command
+    )
+
+    Write-Host ">> [DOTNET] $Command"
+    $dotnetArgs = $Command -split ' '
+    & dotnet @dotnetArgs
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Dotnet command failed with exit code ${LASTEXITCODE}: dotnet $Command"
+    }
 }
