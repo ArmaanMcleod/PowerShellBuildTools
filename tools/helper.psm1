@@ -245,7 +245,7 @@ function Invoke-Winget {
         [string]$Command
     )
 
-    Write-Host ">> [WINGET] $Command"
+    Write-Host ">> [WINGET] ${Command}"
     $wingetArgs = $Command -split ' '
     & winget @wingetArgs
 
