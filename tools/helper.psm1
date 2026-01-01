@@ -194,7 +194,7 @@ function Invoke-Git {
     $gitArgs = $Command -split ' '
     & git @gitArgs
     if ($LASTEXITCODE -ne 0) {
-        throw "Git command failed with exit code ${LASTEXITCODE}: git ${Command}
+        throw "Git command failed with exit code ${LASTEXITCODE}: git ${Command}"
     }
 }
 
