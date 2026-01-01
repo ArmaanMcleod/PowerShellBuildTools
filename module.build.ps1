@@ -43,7 +43,7 @@ task Publish {
     try {
         Push-Location -Path $SourcePath
         Write-Log "Publishing $Configuration configuration to $ReleasePath"
-        Invoke-Dotnet "publish --output $ReleasePath --configuration $Configuration"
+        Invoke-Dotnet "publish --output ${ReleasePath} --configuration ${Configuration}"
     }
     finally {
         Pop-Location
