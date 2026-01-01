@@ -190,7 +190,7 @@ function Invoke-Git {
     param(
         [string]$Command
     )
-    Write-Host ">> [GIT] $Command"
+    Write-Host ">> [GIT] ${Command}"
     $gitArgs = $Command -split ' '
     & git @gitArgs
     if ($LASTEXITCODE -ne 0) {
