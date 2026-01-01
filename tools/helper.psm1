@@ -263,7 +263,7 @@ function Invoke-Dotnet {
         [string]$Command
     )
 
-    Write-Host ">> [DOTNET] $Command"
+    Write-Host ">> [DOTNET] ${Command}"
     $dotnetArgs = $Command -split ' '
     & dotnet @dotnetArgs
 
