@@ -113,7 +113,7 @@ task BuildTestProjects {
     $testPath = Join-Path -Path $RepoPath -ChildPath 'test'
     $testProjects = Get-ChildItem -Path $testPath -Filter '*.csproj' -Recurse
     foreach ($proj in $testProjects) {
-        $buildOutput = Invoke-Dotnet "build $($proj.FullName) --configuration $Configuration"
+        $buildOutput = Invoke-Dotnet "build $($proj.FullName) --configuration ${Configuration}"
         $dllPathMatch = $buildOutput | Select-String -Pattern '-> (.+\.dll)'
         $dllPath = $dllPathMatch.Matches[0].Groups[1].Value.Trim()
         Add-Type -Path $dllPath
