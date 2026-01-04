@@ -169,9 +169,6 @@ function Expand-Nupkg {
     $moduleManifest = Test-ModuleManifest -Path $ModuleManfifestPath
     $moduleVersion = $moduleManifest.Version
     $preRelease = $moduleManifest.PrivateData.PSData.Prerelease
-    if ($preRelease) {
-        $moduleVersion = "$moduleVersion-$preRelease"
-    }
     $moduleName = (Get-Item -Path $ModuleManfifestPath).BaseName
 
     $destPath = Join-Path -Path $OutputPath -ChildPath $moduleName -AdditionalChildPath $moduleVersion
@@ -179,9 +176,10 @@ function Expand-Nupkg {
         New-Item -Path $destPath -ItemType Directory | Out-Null
     }
 
-    $nupkgPath = Join-Path -Path $OutputPath -ChildPath "$moduleName.$moduleVersion.nupkg"
-    Rename-Item -Path $nupkgPath -NewName "$moduleName.$moduleVersion.zip"
-    $zipPath = Join-Path -Path $OutputPath -ChildPath "$moduleName.$moduleVersion.zip"
+    $archiveBaseName = $preRelease ? "$moduleName.$moduleVersion-$preRelease" : "$moduleName.$moduleVersion"
+    $nupkgPath = Join-Path -Path $OutputPath -ChildPath "$archiveBaseName.nupkg"
+    Rename-Item -Path $nupkgPath -NewName "$archiveBaseName.zip"
+    $zipPath = Join-Path -Path $OutputPath -ChildPath "$archiveBaseName.zip"
 
     Expand-Archive -Path $zipPath -DestinationPath $destPath -Force
 }
