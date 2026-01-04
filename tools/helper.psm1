@@ -168,6 +168,10 @@ function Expand-Nupkg {
 
     $moduleManifest = Test-ModuleManifest -Path $ModuleManfifestPath
     $moduleVersion = $moduleManifest.Version
+    $preRelease = $moduleManifest.PrivateData.PSData.Prerelease
+    if ($preRelease) {
+        $moduleVersion = "$moduleVersion-$preRelease"
+    }
     $moduleName = (Get-Item -Path $ModuleManfifestPath).BaseName
 
     $destPath = Join-Path -Path $OutputPath -ChildPath $moduleName -AdditionalChildPath $moduleVersion
