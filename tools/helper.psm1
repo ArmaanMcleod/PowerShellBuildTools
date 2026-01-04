@@ -150,8 +150,8 @@ function Write-Log {
         [switch] $Indent
     )
 
-    $foregroundColor = if ($Warning) { "Yellow" } else { "Green" }
-    $indentPrefix = if ($Indent) { "    " } else { "" }
+    $foregroundColor = $Warning ? "Yellow" : "Green"
+    $indentPrefix = $Indent ? "    " : ""
     Write-Host -ForegroundColor $foregroundColor "${indentPrefix}${Message}"
 }
 
