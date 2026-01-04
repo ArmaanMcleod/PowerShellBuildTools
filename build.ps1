@@ -6,7 +6,7 @@ param (
     $Configuration = 'Debug',
 
     [Parameter(Mandatory = $false)]
-    [ValidateSet('Build', 'Test', 'Docs')]
+    [ValidateSet('Build', 'Test', 'TestPackage', 'Docs')]
     [string]
     $Task = 'Build',
 
