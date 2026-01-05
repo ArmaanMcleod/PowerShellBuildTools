@@ -17,6 +17,7 @@ $SourcePath = Join-Path -Path $RepoPath -ChildPath 'src'
 $ModuleManifiestPath = Join-Path -Path $SourcePath -ChildPath "$RepoName.psd1"
 $ModuleManifest = Test-ModuleManifest -Path $ModuleManifiestPath
 $ModuleVersion = $ModuleManifest.Version
+$ModulePrerelease = $ModuleManifest.PrivateData.PSData.Prerelease
 $ModuleName = (Get-Item -Path $ModuleManifiestPath).BaseName
 $ModulePath = Join-Path -Path $BuildPath -ChildPath $ModuleName
 $ReleasePath = Join-Path -Path $ModulePath -ChildPath $ModuleVersion
@@ -83,7 +84,12 @@ task ExternalHelp {
 }
 
 task Package {
-    $nupkgPath = Join-Path -Path $BuildPath -ChildPath "$ModuleName.$ModuleVersion.nupkg"
+    $nupkgBaseName = "$ModuleName.$ModuleVersion"
+    if ($ModulePrerelease) {
+        $nupkgBaseName += "-$ModulePrerelease"
+    }
+
+    $nupkgPath = Join-Path -Path $BuildPath -ChildPath "$nupkgBaseName.nupkg"
     if (Test-Path -Path $nupkgPath) {
         Remove-Item -Path $nupkgPath -Force
     }
