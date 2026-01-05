@@ -191,7 +191,7 @@ function Invoke-Git {
     param(
         [string]$Command
     )
-    Write-Host ">> [GIT] ${Command}"
+    Write-Log ">> [GIT] ${Command}"
     $gitArgs = $Command -split ' '
     & git @gitArgs
     if ($LASTEXITCODE -ne 0) {
@@ -225,7 +225,7 @@ function Invoke-Mingw64 {
         [switch]$IgnoreError
     )
 
-    Write-Host ">> [MINGW64] ${Command}"
+    Write-Log ">> [MINGW64] ${Command}"
 
     $env:MSYSTEM = "MINGW64"
     $env:CHERE_INVOKING = "1"
@@ -246,7 +246,7 @@ function Invoke-Winget {
         [string]$Command
     )
 
-    Write-Host ">> [WINGET] ${Command}"
+    Write-Log ">> [WINGET] ${Command}"
     $wingetArgs = $Command -split ' '
     & winget @wingetArgs
 
@@ -264,7 +264,7 @@ function Invoke-Dotnet {
         [string]$Command
     )
 
-    Write-Host ">> [DOTNET] ${Command}"
+    Write-Log ">> [DOTNET] ${Command}"
     $dotnetArgs = $Command -split ' '
     & dotnet @dotnetArgs
 
