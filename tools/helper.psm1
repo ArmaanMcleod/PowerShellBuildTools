@@ -171,16 +171,34 @@ function Expand-Nupkg {
     $moduleName = (Get-Item -Path $ModuleManfifestPath).BaseName
 
     $destPath = Join-Path -Path $OutputPath -ChildPath $moduleName -AdditionalChildPath $moduleVersion
-    if (-not(Test-Path -LiteralPath $destPath)) {
+    if (-not (Test-Path $destPath)) {
         New-Item -Path $destPath -ItemType Directory | Out-Null
     }
 
-    $archiveBaseName = $preRelease ? "$moduleName.$moduleVersion-$preRelease" : "$moduleName.$moduleVersion"
-    $nupkgPath = Join-Path -Path $OutputPath -ChildPath "$archiveBaseName.nupkg"
-    Rename-Item -Path $nupkgPath -NewName "$archiveBaseName.zip"
-    $zipPath = Join-Path -Path $OutputPath -ChildPath "$archiveBaseName.zip"
+    $archiveBaseName = "$moduleName.$moduleVersion"
+    if ($preRelease) {
+        $archiveBaseName += "-$preRelease"
+    }
 
-    Expand-Archive -Path $zipPath -DestinationPath $destPath -Force
+    $nupKgFileName = "$archiveBaseName.nupkg"
+    $zipFileName = "$archiveBaseName.zip"
+
+    $nupkgPath = Join-Path -Path $OutputPath -ChildPath $nupKgFileName
+    if (-not (Test-Path $nupkgPath)) {
+        throw "Cannot find nupkg at expected path: $nupkgPath"
+    }
+
+    $zipPath = Join-Path -Path $OutputPath -ChildPath $zipFileName
+
+    try {
+        Rename-Item -Path $nupkgPath -NewName $zipFileName -Force
+        Expand-Archive -Path $zipPath -DestinationPath $destPath -Force
+    }
+    finally {
+        if (Test-Path $zipPath) {
+            Rename-Item -Path $zipPath -NewName $nupKgFileName -Force
+        }
+    }
 }
 
 <#
