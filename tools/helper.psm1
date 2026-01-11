@@ -297,14 +297,21 @@ function Invoke-Dotnet {
 #>
 function Invoke-Docker {
     param(
-        [string]$Command
+        [string]$Command,
+        [switch]$SuppressOutput,
+        [switch]$IgnoreError
     )
 
     Write-Log ">> [DOCKER] ${Command}"
     $dockerArgs = $Command -split ' '
-    & docker @dockerArgs 2>&1
+    if ($SuppressOutput) {
+        & docker @dockerArgs 2>$null | Out-Null
+    }
+    else {
+        & docker @dockerArgs
+    }
 
-    if ($LASTEXITCODE -ne 0) {
+    if (-not $IgnoreError -and $LASTEXITCODE -ne 0) {
         throw "Docker command failed with exit code ${LASTEXITCODE}: docker ${Command}"
     }
 }
