@@ -211,7 +211,7 @@ function Invoke-Git {
     )
     Write-Log ">> [GIT] ${Command}"
     $gitArgs = $Command -split ' '
-    & git @gitArgs
+    & git @gitArgs 2>&1
     if ($LASTEXITCODE -ne 0) {
         throw "Git command failed with exit code ${LASTEXITCODE}: git ${Command}"
     }
@@ -227,7 +227,7 @@ function Convert-ToMsysPath {
     $msysPath = $winPath -replace '\\', '/'
     if ($msysPath -match '^([A-Za-z]):') {
         $drive = $matches[1].ToLower()
-        $rest  = $msysPath.Substring(2)
+        $rest = $msysPath.Substring(2)
         return "/${drive}${rest}"
     }
     return $msysPath
@@ -248,7 +248,7 @@ function Invoke-Mingw64 {
     $env:MSYSTEM = "MINGW64"
     $env:CHERE_INVOKING = "1"
 
-    & "C:\msys64\usr\bin\bash.exe" --login -c "$Command"
+    & "C:\msys64\usr\bin\bash.exe" --login -c "$Command" 2>&1
 
     if (-not $IgnoreError -and $LASTEXITCODE -ne 0) {
         throw "MINGW64 command failed with exit code ${LASTEXITCODE}: ${Command}"
@@ -266,7 +266,7 @@ function Invoke-Winget {
 
     Write-Log ">> [WINGET] ${Command}"
     $wingetArgs = $Command -split ' '
-    & winget @wingetArgs
+    & winget @wingetArgs 2>&1
 
     if ($LASTEXITCODE -ne 0) {
         throw "Winget command failed with exit code ${LASTEXITCODE}: winget ${Command}"
@@ -284,9 +284,27 @@ function Invoke-Dotnet {
 
     Write-Log ">> [DOTNET] ${Command}"
     $dotnetArgs = $Command -split ' '
-    & dotnet @dotnetArgs
+    & dotnet @dotnetArgs 2>&1
 
     if ($LASTEXITCODE -ne 0) {
         throw "Dotnet command failed with exit code ${LASTEXITCODE}: dotnet ${Command}"
+    }
+}
+
+<#
+.SYNOPSIS
+    Helper to run a docker command and check for errors
+#>
+function Invoke-Docker {
+    param(
+        [string]$Command
+    )
+
+    Write-Log ">> [DOCKER] ${Command}"
+    $dockerArgs = $Command -split ' '
+    & docker @dockerArgs 2>&1
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Docker command failed with exit code ${LASTEXITCODE}: docker ${Command}"
     }
 }
