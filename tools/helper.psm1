@@ -315,3 +315,68 @@ function Invoke-Docker {
         throw "Docker command failed with exit code ${LASTEXITCODE}: docker ${Command}"
     }
 }
+
+<#
+.SYNOPSIS
+    Remove unnecessary files from target directory.
+#>
+function Remove-NonEssentialFiles {
+    param(
+        [string]$TargetDir,
+        [string[]]$KeepFilePatterns,
+        [string[]]$KeepDirs
+    )
+
+    Write-Host "Stripping non-essential files..." -ForegroundColor Cyan
+    $files = Get-ChildItem -Path $TargetDir -Recurse -File
+    if (-not $files -or $files.Count -eq 0) {
+        throw "No files found in $TargetDir - download or extraction may have failed"
+    }
+    $beforeSize = ($files | Measure-Object -Property Length -Sum).Sum / 1MB
+
+    Write-Host "Initial File Count: $($files.Count), Size: $([math]::Round($beforeSize, 2)) MB" -ForegroundColor Cyan
+
+    $removedCount = 0
+
+    Write-Host "Keeping files matching patterns: $($KeepFilePatterns -join ', ')" -ForegroundColor Cyan
+
+    # Remove root directory files except essential ones
+    $rootFiles = Get-ChildItem -Path $TargetDir -File
+    foreach ($file in $rootFiles) {
+        $keep = $false
+        foreach ($pattern in $KeepFilePatterns) {
+            if ($file.Name -like $pattern) {
+                $keep = $true
+                break
+            }
+        }
+        if (-not $keep) {
+            Remove-Item $file.FullName -Force -ErrorAction SilentlyContinue
+            $removedCount++
+        }
+    }
+
+    Write-Host "Keeping directories: $($KeepDirs -join ', ')" -ForegroundColor Cyan
+
+    # Remove directories not in keep list
+    $allDirs = Get-ChildItem -Path $TargetDir -Directory
+    foreach ($dir in $allDirs) {
+        if ($dir.Name -notin $KeepDirs) {
+            $removedCount += (Get-ChildItem $dir.FullName -Recurse -File).Count
+            Remove-Item $dir.FullName -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    $filesAfter = Get-ChildItem -Path $TargetDir -Recurse -File
+    if (-not $filesAfter -or $filesAfter.Count -eq 0) {
+        throw "All files were removed from $TargetDir - file removal logic may be incorrect"
+    }
+    $afterSize = ($filesAfter | Measure-Object -Property Length -Sum).Sum / 1MB
+    $saved = $beforeSize - $afterSize
+
+    Write-Host "Removed $removedCount files (saved $([math]::Round($saved, 2)) MB)" -ForegroundColor Green
+
+    $fileCount = (Get-ChildItem $TargetDir -Recurse -File).Count
+    Write-Host "`nDownload completed successfully!" -ForegroundColor Green
+    Write-Host "Kept $fileCount essential files ($([math]::Round($afterSize, 2)) MB) in: $TargetDir" -ForegroundColor Green
+}
