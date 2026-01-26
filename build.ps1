@@ -12,7 +12,11 @@ param (
 
     [Parameter(Mandatory = $false)]
     [string[]]
-    $PesterTagFilter
+    $PesterTagFilter,
+
+    [Parameter(Mandatory = $false)]
+    [hashtable]
+    $EnvironmentVariables = @{}
 )
 
 
@@ -66,6 +70,11 @@ $invokeBuildParams = @{
 
 if ($PesterTagFilter) {
     $invokeBuildParams['PesterTagFilter'] = $PesterTagFilter
+}
+
+foreach ($envVar in $EnvironmentVariables.GetEnumerator()) {
+    Write-Log "Setting environment variable '$($envVar.Key)' to '$($envVar.Value)'"
+    [System.Environment]::SetEnvironmentVariable($envVar.Key, $envVar.Value)
 }
 
 Write-Log "Starting build task '$Task' with parameters: $($invokeBuildParams | Out-String)"
