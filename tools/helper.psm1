@@ -381,6 +381,10 @@ function Remove-NonEssentialFiles {
     Write-Log "Kept $fileCount essential files ($([math]::Round($afterSize, 2)) MB) in: $TargetDir"
 }
 
+<#
+.SYNOPSIS
+    Start MSYS2 MinGW64 bootstrap process.  
+#>
 function Start-MinGwBootstrap {
     param(
         [switch]$UpdatePackages
