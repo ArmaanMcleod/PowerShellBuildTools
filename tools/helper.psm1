@@ -327,18 +327,18 @@ function Remove-NonEssentialFiles {
         [string[]]$KeepDirs
     )
 
-    Write-Host "Stripping non-essential files..." -ForegroundColor Cyan
+    Write-Log "Stripping non-essential files..."
     $files = Get-ChildItem -Path $TargetDir -Recurse -File
     if (-not $files -or $files.Count -eq 0) {
         throw "No files found in $TargetDir - download or extraction may have failed"
     }
     $beforeSize = ($files | Measure-Object -Property Length -Sum).Sum / 1MB
 
-    Write-Host "Initial File Count: $($files.Count), Size: $([math]::Round($beforeSize, 2)) MB" -ForegroundColor Cyan
+    Write-Log "Initial File Count: $($files.Count), Size: $([math]::Round($beforeSize, 2)) MB"
 
     $removedCount = 0
 
-    Write-Host "Keeping files matching patterns: $($KeepFilePatterns -join ', ')" -ForegroundColor Cyan
+    Write-Log "Keeping files matching patterns: $($KeepFilePatterns -join ', ')"
 
     # Remove root directory files except essential ones
     $rootFiles = Get-ChildItem -Path $TargetDir -File
@@ -356,7 +356,7 @@ function Remove-NonEssentialFiles {
         }
     }
 
-    Write-Host "Keeping directories: $($KeepDirs -join ', ')" -ForegroundColor Cyan
+    Write-Log "Keeping directories: $($KeepDirs -join ', ')"
 
     # Remove directories not in keep list
     $allDirs = Get-ChildItem -Path $TargetDir -Directory
@@ -374,9 +374,47 @@ function Remove-NonEssentialFiles {
     $afterSize = ($filesAfter | Measure-Object -Property Length -Sum).Sum / 1MB
     $saved = $beforeSize - $afterSize
 
-    Write-Host "Removed $removedCount files (saved $([math]::Round($saved, 2)) MB)" -ForegroundColor Green
+    Write-Log "Removed $removedCount files (saved $([math]::Round($saved, 2)) MB)"
 
     $fileCount = (Get-ChildItem $TargetDir -Recurse -File).Count
-    Write-Host "`nDownload completed successfully!" -ForegroundColor Green
-    Write-Host "Kept $fileCount essential files ($([math]::Round($afterSize, 2)) MB) in: $TargetDir" -ForegroundColor Green
+    Write-Log "`nDownload completed successfully!"
+    Write-Log "Kept $fileCount essential files ($([math]::Round($afterSize, 2)) MB) in: $TargetDir"
+}
+
+function Start-MinGwBootstrap {
+    param(
+        [switch]$UpdatePackages
+    )
+    Write-Log "Checking for MSYS2 installation..."
+
+    $msys2Root = "C:\msys64"
+    $envExe = Join-Path $msys2Root "usr\bin\env.exe"
+
+    if (-not (Test-Path $envExe)) {
+        Write-Log "MSYS2 not found at $msys2Root. Installing via winget..."
+        Invoke-Winget "install -e --id MSYS2.MSYS2"
+    }
+
+    if (-not (Test-Path $envExe)) {
+        throw "MSYS2 installation not found at $envExe even after install attempt."
+    }
+
+    if ($UpdatePackages) {
+        Write-Log "Updating MSYS2 packages..."
+        Invoke-Mingw64 "pacman -Syu --noconfirm --needed"
+    }
+
+    $packages = @(
+        'mingw-w64-x86_64-pkgconf'
+        'mingw-w64-x86_64-gcc'
+        'mingw-w64-x86_64-cmake'
+        'mingw-w64-x86_64-ninja'
+        'make'
+        'unzip'
+    )
+
+    $pkgList = $packages -join " "
+
+    Write-Log "Ensuring MSYS2 MinGW64 packages are installed..."
+    Invoke-Mingw64 "pacman --needed --noconfirm -S $pkgList"
 }
