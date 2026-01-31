@@ -211,7 +211,8 @@ function Invoke-Git {
     )
     Write-Log ">> [GIT] ${Command}"
     $gitArgs = $Command -split ' '
-    & git @gitArgs 2>&1
+    $output = & git @gitArgs 2>&1
+    Format-CommandOutput $output
     if ($LASTEXITCODE -ne 0) {
         throw "Git command failed with exit code ${LASTEXITCODE}: git ${Command}"
     }
@@ -248,10 +249,30 @@ function Invoke-Mingw64 {
     $env:MSYSTEM = "MINGW64"
     $env:CHERE_INVOKING = "1"
 
-    & "C:\msys64\usr\bin\bash.exe" --login -c "$Command" 2>&1
+    $output = & "C:\msys64\usr\bin\bash.exe" --login -c "$Command" 2>&1
+    Format-CommandOutput $output
 
     if (-not $IgnoreError -and $LASTEXITCODE -ne 0) {
         throw "MINGW64 command failed with exit code ${LASTEXITCODE}: ${Command}"
+    }
+}
+
+<#
+.SYNOPSIS
+    Format command output for logging.
+#>
+function Format-CommandOutput {
+    param(
+        $Output
+    )
+
+    $lines = $Output
+    if ($Output -is [string]) {
+        $lines = $Output -split "`r?`n"
+    }
+
+    foreach ($line in $lines) {
+        Write-Host $line -ForegroundColor DarkGray
     }
 }
 
@@ -266,7 +287,8 @@ function Invoke-Winget {
 
     Write-Log ">> [WINGET] ${Command}"
     $wingetArgs = $Command -split ' '
-    & winget @wingetArgs 2>&1
+    $output = & winget @wingetArgs 2>&1
+    Format-CommandOutput $output
 
     if ($LASTEXITCODE -ne 0) {
         throw "Winget command failed with exit code ${LASTEXITCODE}: winget ${Command}"
@@ -284,7 +306,8 @@ function Invoke-Dotnet {
 
     Write-Log ">> [DOTNET] ${Command}"
     $dotnetArgs = $Command -split ' '
-    & dotnet @dotnetArgs 2>&1
+    $output = & dotnet @dotnetArgs 2>&1
+    Format-CommandOutput $output
 
     if ($LASTEXITCODE -ne 0) {
         throw "Dotnet command failed with exit code ${LASTEXITCODE}: dotnet ${Command}"
@@ -308,7 +331,8 @@ function Invoke-Docker {
         & docker @dockerArgs 2>$null | Out-Null
     }
     else {
-        & docker @dockerArgs
+        $output = & docker @dockerArgs 2>&1
+        Format-CommandOutput $output
     }
 
     if (-not $IgnoreError -and $LASTEXITCODE -ne 0) {
