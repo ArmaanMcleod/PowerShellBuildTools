@@ -211,8 +211,7 @@ function Invoke-Git {
     )
     Write-Log ">> [GIT] ${Command}"
     $gitArgs = $Command -split ' '
-    $output = & git @gitArgs 2>&1
-    Format-CommandOutput $output
+    git @gitArgs 2>&1 | Out-Host
     if ($LASTEXITCODE -ne 0) {
         throw "Git command failed with exit code ${LASTEXITCODE}: git ${Command}"
     }
@@ -249,30 +248,10 @@ function Invoke-Mingw64 {
     $env:MSYSTEM = "MINGW64"
     $env:CHERE_INVOKING = "1"
 
-    $output = & "C:\msys64\usr\bin\bash.exe" --login -c "$Command" 2>&1
-    Format-CommandOutput $output
+    & "C:\msys64\usr\bin\bash.exe" --login -c "$Command" 2>&1 | Out-Host
 
     if (-not $IgnoreError -and $LASTEXITCODE -ne 0) {
         throw "MINGW64 command failed with exit code ${LASTEXITCODE}: ${Command}"
-    }
-}
-
-<#
-.SYNOPSIS
-    Format command output for logging.
-#>
-function Format-CommandOutput {
-    param(
-        $Output
-    )
-
-    $lines = $Output
-    if ($Output -is [string]) {
-        $lines = $Output -split "`r?`n"
-    }
-
-    foreach ($line in $lines) {
-        Write-Host $line -ForegroundColor DarkGray
     }
 }
 
@@ -287,8 +266,7 @@ function Invoke-Winget {
 
     Write-Log ">> [WINGET] ${Command}"
     $wingetArgs = $Command -split ' '
-    $output = & winget @wingetArgs 2>&1
-    Format-CommandOutput $output
+    winget @wingetArgs 2>&1 | Out-Host
 
     if ($LASTEXITCODE -ne 0) {
         throw "Winget command failed with exit code ${LASTEXITCODE}: winget ${Command}"
@@ -306,8 +284,7 @@ function Invoke-Dotnet {
 
     Write-Log ">> [DOTNET] ${Command}"
     $dotnetArgs = $Command -split ' '
-    $output = & dotnet @dotnetArgs 2>&1
-    Format-CommandOutput $output
+    dotnet @dotnetArgs 2>&1 | Out-Host
 
     if ($LASTEXITCODE -ne 0) {
         throw "Dotnet command failed with exit code ${LASTEXITCODE}: dotnet ${Command}"
@@ -328,11 +305,10 @@ function Invoke-Docker {
     Write-Log ">> [DOCKER] ${Command}"
     $dockerArgs = $Command -split ' '
     if ($SuppressOutput) {
-        & docker @dockerArgs 2>$null | Out-Null
+        docker @dockerArgs 2>$null | Out-Null
     }
     else {
-        $output = & docker @dockerArgs 2>&1
-        Format-CommandOutput $output
+        docker @dockerArgs | Out-Host
     }
 
     if (-not $IgnoreError -and $LASTEXITCODE -ne 0) {
