@@ -316,6 +316,10 @@ function Invoke-Docker {
     }
 }
 
+<#
+.SYNOPSIS
+    Helper to run a Perl PAR::Packer command and check for errors
+#>
 function Invoke-PerlParPacker {
     param(
         [string]$Command
