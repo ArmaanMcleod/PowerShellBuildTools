@@ -318,6 +318,24 @@ function Invoke-Docker {
 
 <#
 .SYNOPSIS
+    Helper to run a Perl PAR::Packer command and check for errors
+#>
+function Invoke-PerlParPacker {
+    param(
+        [string]$Command
+    )
+
+    Write-Log ">> [PERL PP] ${Command}"
+    $ppArgs = $Command -split ' '
+    pp @ppArgs 2>&1 | Out-Host
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Perl PAR::Packer command failed with exit code ${LASTEXITCODE}: pp ${Command}"
+    }
+}
+
+<#
+.SYNOPSIS
     Remove unnecessary files from target directory.
 #>
 function Remove-NonEssentialFiles {
