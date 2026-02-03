@@ -211,10 +211,11 @@ function Invoke-Git {
     )
     Write-Log ">> [GIT] ${Command}"
     $gitArgs = $Command -split ' '
-    git @gitArgs 2>&1 | Out-Host
+    git @gitArgs 2>&1 | Tee-Object -Variable output | Out-Host
     if ($LASTEXITCODE -ne 0) {
         throw "Git command failed with exit code ${LASTEXITCODE}: git ${Command}"
     }
+    return $output
 }
 
 <#
@@ -248,11 +249,12 @@ function Invoke-Mingw64 {
     $env:MSYSTEM = "MINGW64"
     $env:CHERE_INVOKING = "1"
 
-    & "C:\msys64\usr\bin\bash.exe" --login -c "$Command" 2>&1 | Out-Host
+    & "C:\msys64\usr\bin\bash.exe" --login -c "$Command" 2>&1 | Tee-Object -Variable output | Out-Host
 
     if (-not $IgnoreError -and $LASTEXITCODE -ne 0) {
         throw "MINGW64 command failed with exit code ${LASTEXITCODE}: ${Command}"
     }
+    return $output
 }
 
 <#
@@ -266,11 +268,12 @@ function Invoke-Winget {
 
     Write-Log ">> [WINGET] ${Command}"
     $wingetArgs = $Command -split ' '
-    winget @wingetArgs 2>&1 | Out-Host
+    winget @wingetArgs 2>&1 | Tee-Object -Variable output | Out-Host
 
     if ($LASTEXITCODE -ne 0) {
         throw "Winget command failed with exit code ${LASTEXITCODE}: winget ${Command}"
     }
+    return $output
 }
 
 <#
@@ -284,11 +287,14 @@ function Invoke-Dotnet {
 
     Write-Log ">> [DOTNET] ${Command}"
     $dotnetArgs = $Command -split ' '
-    dotnet @dotnetArgs 2>&1 | Out-Host
+    
+    dotnet @dotnetArgs 2>&1 | Tee-Object -Variable output | Out-Host
 
     if ($LASTEXITCODE -ne 0) {
         throw "Dotnet command failed with exit code ${LASTEXITCODE}: dotnet ${Command}"
     }
+
+    return $output
 }
 
 <#
@@ -308,11 +314,14 @@ function Invoke-Docker {
         docker @dockerArgs 2>$null | Out-Null
     }
     else {
-        docker @dockerArgs | Out-Host
+        docker @dockerArgs 2>&1 | Tee-Object -Variable output | Out-Host
     }
 
     if (-not $IgnoreError -and $LASTEXITCODE -ne 0) {
         throw "Docker command failed with exit code ${LASTEXITCODE}: docker ${Command}"
+    }
+    if (-not $SuppressOutput) {
+        return $output
     }
 }
 
@@ -327,11 +336,12 @@ function Invoke-PerlParPacker {
 
     Write-Log ">> [PERL PP] ${Command}"
     $ppArgs = $Command -split ' '
-    pp @ppArgs 2>&1 | Out-Host
+    pp @ppArgs 2>&1 | Tee-Object -Variable output | Out-Host
 
     if ($LASTEXITCODE -ne 0) {
         throw "Perl PAR::Packer command failed with exit code ${LASTEXITCODE}: pp ${Command}"
     }
+    return $output
 }
 
 <#

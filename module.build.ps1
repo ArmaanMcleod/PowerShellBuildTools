@@ -121,6 +121,10 @@ task BuildTestProjects {
     foreach ($proj in $testProjects) {
         $buildOutput = Invoke-Dotnet "build $($proj.FullName) --configuration ${Configuration}"
         $dllPathMatch = $buildOutput | Select-String -Pattern '-> (.+\.dll)'
+        if (-not $dllPathMatch) {
+            throw "Could not find DLL path in build output for $($proj.Name)"
+        }
+
         $dllPath = $dllPathMatch.Matches[0].Groups[1].Value.Trim()
         Add-Type -Path $dllPath
     }
