@@ -119,7 +119,7 @@ task BuildTestProjects {
     $testPath = Join-Path -Path $RepoPath -ChildPath 'test'
     $testProjects = Get-ChildItem -Path $testPath -Filter '*.csproj' -Recurse
     foreach ($proj in $testProjects) {
-        $buildOutput = Invoke-Dotnet "build $($proj.FullName) --configuration ${Configuration}"
+        $buildOutput = Invoke-Dotnet "build $($proj.FullName) --configuration ${Configuration}" -CaptureOutput
         $dllPathMatch = $buildOutput | Select-String -Pattern '-> (.+\.dll)'
         if (-not $dllPathMatch) {
             throw "Could not find DLL path in build output for $($proj.Name)"
